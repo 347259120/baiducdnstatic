@@ -1,0 +1,170 @@
+/***
+NOTE:AJAX处理JS
+TIME:2015-5-18 11:02:51
+AUTHOR:宋梦澜
+
+***/
+
+var AJax = function (handleUrl) {
+    this.Url = handleUrl ? handleUrl : "";
+    this.xmlHttpRequest = null;
+    //this.Init = null;
+    //this.ProcessResponse = null;
+    //this.SendRequest = null;
+    this.CallFunc = null; //回调函数
+    this.DataContent = null; //数据内容
+};
+
+AJax.prototype.CheckUrl = function () {
+    var bo = false;
+    //if (this.Url.indexOf('.') > 0) 
+    if (this.Url.lastIndexOf('.') > 0) {
+        bo = true;
+    }
+    else {
+        bo = false;
+    }
+    return bo;
+};
+
+AJax.prototype.Init = function () {
+    //判断浏览器是否支持异步对象
+    if (window.XMLHttpRequest) {
+        this.xmlHttpRequest = new XMLHttpRequest();
+    }
+    else if (window.ActiveXObject) {
+        try {
+            this.xmlHttpRequest = new ActiveXObject("Msxml2.XMLHTTP");
+        } catch (e) {
+            this.xmlHttpRequest = new ActiveXObject("Microsoft.XMLHTTP");
+            if (console && console.log) {
+                console.log("无法创建异步请求对象！");
+            }
+        }
+    }
+};
+
+function ProcessResponse(callFunc, obj) {
+    if (obj.readyState == 4 && obj.status == 200) {
+        var resultData = null;
+        var resultType = obj.getResponseHeader("Content-Type");
+        //        switch (resultType) {
+        //            case "image/Png" || "image/jpeg":
+        //                resultData = obj.responseBody;
+        //                break;
+        //            case "text/xml; charset=gb2312" || "text/xml; charset=utf-8" || "text/xml;charset=gb2312" || "text/xml;charset=utf-8":
+        //                resultData = obj.responseXML;
+        //                break;
+        //            case "text/html; charset=gb2312" || "text/html; charset=utf-8" || "text/html;charset=gb2312" || "text/html;charset=utf-8":
+        //                resultData = obj.responseText;
+        //                break;
+        //            default:
+        //                resultData = obj.responseStream;
+        //}
+
+        if (resultType == "image/Png" || resultType == "image/jpeg") {
+            resultData = obj.responseBody;
+        }
+        else if (resultType == "text/xml; charset=gb2312" || resultType == "text/xml; charset=utf-8" || resultType == "text/xml;charset=gb2312" || resultType == "text/xml;charset=utf-8") {
+            resultData = obj.responseXML;
+        }
+        else if (resultType == "text/html; charset=gb2312" || resultType == "text/html; charset=utf-8" || resultType == "text/html;charset=gb2312" || resultType == "text/html;charset=utf-8") {
+            resultData = obj.responseText;
+        }
+        else {
+            resultData = obj.responseStream;
+        }
+
+        if (resultData) {
+            //执行回调函数
+            callFunc(resultData);
+        }
+        else {
+            alert("接收服务器数据异常！");
+        }
+        //设置资源失效
+        delete resultData;
+        delete resultType;
+        //释放资源
+        //CollectGarbage();
+        //AJax.Dispose();
+        setTimeout(CollectGarbage, 3);
+    }
+}
+
+AJax.prototype.Handle = function (callFunc, obj) {
+    this.xmlHttpRequest.onreadystatechange = function () { ProcessResponse(callFunc, obj); };
+};
+
+//在IE最小化时，IE会主动调用一次GC，
+AJax.prototype.Dispose = function () {
+    if (this.xmlHttpRequest) {
+        this.xmlHttpRequest = null;
+        //delete this.xmlHttpRequest;
+        //释放资源（由于资源还在上下文中，立即调用GC并不会释放资源，故延时call GC）
+        //CollectGarbage();
+        setTimeout(CollectGarbage, 3);
+    }
+};
+
+AJax.prototype.SendRequest = function () {
+    if (this.CheckUrl()) {
+        this.Init();
+        if (this.CallFunc) {
+            if (this.xmlHttpRequest) {
+                this.xmlHttpRequest.open("POST", this.Url, true);
+                this.xmlHttpRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+                //this.xmlHttpRequest.onreadystatechange = ProcessResponse;
+                this.Handle(this.CallFunc, this.xmlHttpRequest);
+                this.xmlHttpRequest.send(this.DataContent);
+            }
+            else {
+                this.xmlHttpRequest.abort();
+                this.Dispose();
+                alert("异步请求对象创建失败！");
+            }
+        }
+        else {
+            this.Dispose();
+            alert("请设置回调函数！");
+        }
+    }
+    else {
+        alert("非法地址！");
+    }
+};
+
+//AJax.SendRequest = function () {
+//    if (this.CheckUrl()) {
+//        this.Init();
+//        if (!this.CallFunc) {
+//            if (!this.xmlHttpRequest) {
+//                this.xmlHttpRequest.open("POST", this.Url, true);
+//                this.xmlHttpRequest.onreadystatechange = this.ProcessResponse;
+//                this.xmlHttpRequest.send(null);
+//            }
+//            else {
+//                this.Dispose();
+//                alert("异步请求对象创建失败！");
+
+//            }
+//        }
+//        else {
+//            this.Dispose();
+//            alert("请设置回调函数！");
+//        }
+//    }
+//    else {
+//        alert("非法地址！");
+//    }
+//};
+
+
+
+
+
+
+
+
+
+
